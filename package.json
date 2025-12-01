@@ -30,6 +30,10 @@
       {
         "command": "epubReader.openFile",
         "title": "Open EPUB File"
+      },
+      {
+        "command": "epubReader.focusView",
+        "title": "Focus EPUB Reader View"
       }
     ],
     "viewsContainers": {

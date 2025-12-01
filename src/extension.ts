@@ -69,12 +69,23 @@ export function activate(context: vscode.ExtensionContext) {
 					// Attempt to show container first BEFORE sending book (so pendingBook flows if needed)
 					const containerCmd = "workbench.view.extension.epubReader";
 					const openViewCmd = "workbench.views.openView";
-					console.log("openFile: executing container command early", containerCmd);
+					const focusViewCmd = "epubReader.focusView";
 					try {
+						const all = await vscode.commands.getCommands(true);
+						console.log(
+							"openFile: executing container command early",
+							containerCmd,
+							"commandsTotal=",
+							all.length,
+							"hasContainer=",
+							all.includes(containerCmd)
+						);
 						await vscode.commands.executeCommand(containerCmd);
 					} catch (err) {
 						console.warn("openFile: container command execution failed", err);
 					}
+					// Attempt internal focusView command
+					try { await vscode.commands.executeCommand(focusViewCmd); } catch (err) { console.warn("openFile: focusView internal command failed", err); }
 					// Try direct openView first (may show QuickPick if view not found)
 					try {
 						console.log("openFile: attempting direct openView for epubReader.sidebar");
@@ -82,9 +93,9 @@ export function activate(context: vscode.ExtensionContext) {
 					} catch (err) {
 						console.warn("openFile: openView command failed (may be normal)", err);
 					}
-					// Poll up to 5s for provider readiness
+					// Poll up to 10s for provider readiness
 					let ready = false;
-					for (let i = 0; i < 50; i++) {
+					for (let i = 0; i < 100; i++) {
 						if (provider.isReady && provider.isReady()) {
 							ready = true;
 							break;
@@ -96,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
 						await provider.reveal();
 						provider.showBook(book);
 					} else {
-						console.log("openFile: provider NOT ready after wait (5s), using fallback panel");
+						console.log("openFile: provider NOT ready after wait (10s), using fallback panel");
 						const panel = vscode.window.createWebviewPanel(
 							"epubReaderFallback",
 							`EPUB: ${book.name}`,
@@ -144,7 +155,7 @@ export function activate(context: vscode.ExtensionContext) {
 								try {
 									try { await vscode.commands.executeCommand(containerCmd); } catch (err) { console.warn("fallback: container command failed", err); }
 									// poll up to 3s
-									for (let i = 0; i < 30; i++) {
+									for (let i = 0; i < 50; i++) {
 										if (provider.isReady && provider.isReady()) {
 											await provider.reveal();
 											provider.showBook(book);
@@ -200,6 +211,14 @@ export function activate(context: vscode.ExtensionContext) {
 				provider.reveal();
 			}
 		)
+	);
+
+	// internal focus command to attempt reveal programmatically
+	context.subscriptions.push(
+		vscode.commands.registerCommand("epubReader.focusView", async () => {
+			console.log("epubReader.focusView invoked");
+			try { await provider.reveal(); } catch (err) { console.warn("focusView: reveal failed", err); }
+		})
 	);
 }
 
