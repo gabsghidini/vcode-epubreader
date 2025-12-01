@@ -50,7 +50,7 @@ function activate(context) {
             console.warn('EPUB Reader: expected container command workbench.view.extension.epubReader NOT found. Right-click Activity Bar to ensure custom views are visible.');
         }
     });
-    context.subscriptions.push(vscode.window.registerWebviewViewProvider("epubReader.sidebar", provider));
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider("epubReader.explorerView", provider));
     context.subscriptions.push(vscode.commands.registerCommand("epubReader.openFile", async (uri) => {
         if (isOpening) {
             console.log("openFile: already opening, ignoring duplicate invocation");

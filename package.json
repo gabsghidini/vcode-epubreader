@@ -10,7 +10,7 @@
   "publisher": "gabsghidini",
   "categories": ["Other"],
   "activationEvents": [
-    "onView:epubReader.sidebar",
+    "onView:epubReader.explorerView",
     "onCommand:epubReader.openFile"
   ],
   "main": "./out/extension.js",
@@ -36,20 +36,11 @@
         "title": "Focus EPUB Reader View"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "epubReader",
-          "title": "Epub Reader",
-          "icon": "media/icon.svg"
-        }
-      ]
-    },
     "views": {
-      "epubReader": [
+      "explorer": [
         {
-          "id": "epubReader.sidebar",
-          "name": "Epub Reader",
+          "id": "epubReader.explorerView",
+          "name": "EPUB Reader",
           "type": "webview"
         }
       ]
