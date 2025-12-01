@@ -1,0 +1,20 @@
+html, body, #viewer, #epub-container {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: sans-serif;
+}
+#toolbar {
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  padding: 8px;
+  background: var(--vscode-sideBar-background);
+}
+#toolbar button { padding: 4px 8px; }
+#viewer { flex: 1; overflow: auto; }
+#epub-container { height: 100%; }
