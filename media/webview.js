@@ -154,13 +154,24 @@ async function loadBook(bookMsg, lastLocation) {
     const chapterSelect = document.getElementById('chapter-select');
     chapterSelect.innerHTML = '<option value="">Selecione um capítulo...</option>';
     
-    if (navigation && navigation.toc) {
-      navigation.toc.forEach((chapter, index) => {
+    // Recursive function to add chapters and subchapters
+    function addChaptersRecursive(chapters, level = 0) {
+      chapters.forEach((chapter) => {
         const option = document.createElement('option');
         option.value = chapter.href;
-        option.textContent = chapter.label.trim();
+        const indent = '\u00a0\u00a0'.repeat(level); // 2 spaces per level
+        option.textContent = indent + chapter.label.trim();
         chapterSelect.appendChild(option);
+        
+        // Add subitems if they exist
+        if (chapter.subitems && chapter.subitems.length > 0) {
+          addChaptersRecursive(chapter.subitems, level + 1);
+        }
       });
+    }
+    
+    if (navigation && navigation.toc) {
+      addChaptersRecursive(navigation.toc);
     }
 
     chapterSelect.addEventListener('change', (e) => {
