@@ -166,22 +166,46 @@ export function activate(context: vscode.ExtensionContext) {
 						// handle incoming messages from the panel
 						panel.webview.onDidReceiveMessage(async (m) => {
 							if (m && m.command === 'openInSidebar') {
+								console.log('extension: fallback panel requested openInSidebar');
 								try {
-									const containerCmd = 'workbench.view.extension.epubReader.container';
 									const commands = await vscode.commands.getCommands(true);
-									if (commands.includes(containerCmd)) {
-										await vscode.commands.executeCommand(containerCmd);
-													for (let i = 0; i < 30; i++) {
-											if (provider.isReady && provider.isReady()) {
-												await provider.reveal();
-												break;
-											}
-											await new Promise((r) => setTimeout(r, 100));
+									const viewCmd = 'workbench.views.openView';
+									const containerCmd = 'workbench.view.extension.epubReader.container';
+									let executed = false;
+									if (commands.includes(viewCmd)) {
+										try {
+											console.log('extension: executing workbench.views.openView', 'epubReader.sidebar');
+											await vscode.commands.executeCommand(viewCmd, 'epubReader.sidebar');
+											executed = true;
+										} catch (err) {
+											console.warn('extension: workbench.views.openView failed', err);
 										}
-										provider.showBook(book);
-									} else {
-										vscode.window.showInformationMessage('Epub Reader: a barra lateral não está disponível neste host. Abra manualmente a Activity Bar.');
 									}
+									if (!executed && commands.includes(containerCmd)) {
+										try {
+											console.log('extension: executing container command', containerCmd);
+											await vscode.commands.executeCommand(containerCmd);
+											executed = true;
+										} catch (err) {
+											console.warn('extension: container command failed', err);
+										}
+									}
+									if (!executed) {
+										console.log('extension: no suitable command to open sidebar found');
+										vscode.window.showInformationMessage('Epub Reader: a barra lateral não está disponível neste host. Abra manualmente a Activity Bar.');
+										return;
+									}
+									// poll for provider readiness
+									for (let i = 0; i < 30; i++) {
+										if (provider.isReady && provider.isReady()) {
+											console.log('extension: provider is ready, revealing');
+											await provider.reveal();
+											break;
+										}
+										await new Promise((r) => setTimeout(r, 100));
+									}
+									// ensure book is shown in sidebar as well
+									provider.showBook(book);
 								} catch (err) {
 									console.warn('Error opening in sidebar', err);
 								}

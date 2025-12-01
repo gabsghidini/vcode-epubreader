@@ -25,6 +25,7 @@ const openSidebarButton = document.getElementById('openSidebar');
 if (openSidebarButton) {
   openSidebarButton.addEventListener('click', () => {
     console.log('webview: openSidebar click -> posting openInSidebar');
+    openSidebarButton.disabled = true;
     vscode.postMessage({ command: 'openInSidebar' });
   });
 }
