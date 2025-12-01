@@ -57,6 +57,15 @@ npm run build
 npm run watch  # Para desenvolvimento contínuo
 ```
 
+### Gerar novo VSIX após mudanças
+
+```bash
+npm run build
+vsce package
+```
+
+Isso irá gerar/atualizar o arquivo `vscode-epub-reader-0.1.0.vsix`
+
 ## 📝 Notas Técnicas
 
 - Usa WebView com epub.js (CDN)
