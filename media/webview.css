@@ -6,15 +6,75 @@ html, body, #viewer, #epub-container {
 body {
   display: flex;
   flex-direction: column;
-  font-family: sans-serif;
+  font-family: var(--vscode-font-family);
 }
 #toolbar {
-  display:flex;
+  display: flex;
   gap: 8px;
-  align-items:center;
+  align-items: center;
   padding: 8px;
   background: var(--vscode-sideBar-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
 }
-#toolbar button { padding: 4px 8px; }
-#viewer { flex: 1; overflow: auto; }
-#epub-container { height: 100%; }
+#toolbar button { 
+  padding: 6px 12px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#toolbar button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+#toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#book-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#progress-bar {
+  width: 120px;
+  height: 4px;
+  background: var(--vscode-progressBar-background);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-left: 8px;
+}
+#progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--vscode-progressBar-background);
+  transition: width 0.3s ease;
+}
+#chapter-info {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#viewer { 
+  flex: 1; 
+  overflow: auto;
+  background: var(--vscode-editor-background);
+}
+#epub-container { 
+  height: 100%;
+}
+.epub-error {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--vscode-errorForeground);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
