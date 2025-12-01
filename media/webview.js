@@ -34,8 +34,8 @@ chapterInfo.style.fontSize = '11px';
 chapterInfo.style.opacity = '0.7';
 
 const toolbar = document.getElementById('toolbar');
-toolbar.insertBefore(btnNext, document.getElementById('book-title'));
 toolbar.insertBefore(btnPrev, document.getElementById('book-title'));
+toolbar.insertBefore(btnNext, document.getElementById('book-title'));
 toolbar.appendChild(chapterInfo);
 toolbar.appendChild(progressBar);
 
