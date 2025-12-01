@@ -1,34 +1,65 @@
-# EPUB Reader — VS Code extension
+# EPUB Reader para VS Code
 
-Extensão simples que abre arquivos EPUB em um Webview na barra lateral (Activity Bar) e salva o último local lido para cada arquivo.
+Extensão que abre arquivos EPUB no painel Explorer do VS Code com tema escuro e persistência automática.
 
-Como usar
-- Clique no ícone "Epub Reader" na Activity Bar (barra lateral do VSCode) para abrir a visão; também é possível usar o comando "Open EPUB File" (Ctrl+Shift+P → Open EPUB File) ou clicar com o botão direito em um arquivo .epub no Explorer e selecionar "Open EPUB File".
-- Abra um arquivo .epub do sistema. O leitor mostrará o conteúdo e salvará a posição atual de leitura. Ao reabrir o mesmo arquivo, a leitura será retomada do último local salvo.
+## ✨ Funcionalidades
 
-Desenvolvimento
-1. Instale dependências: `npm install`.
-2. Compile: `npm run build`.
-3. Pressione F5 no VS Code para abrir uma nova janela com a extensão em desenvolvimento.
+- 📚 Leitor EPUB integrado no painel Explorer
+- 💾 Salva automaticamente a posição de leitura
+- 🔄 Reabre o último livro automaticamente
+- ⚡ Navegação por teclado (← →)
+- 📑 Seletor de capítulos
+- 🎨 Tema escuro com letras brancas
+- 📊 Barra de progresso visual
 
-Notas técnicas
-- Usa um Webview View (barra lateral) para integração com a Activity Bar. A webview carrega epub.js para renderizar o arquivo EPUB.
-- A posição de leitura é salva usando `context.globalState` por URI de arquivo.
+## 🚀 Como Instalar Localmente
 
-Licença
-MIT
-# EPUB Reader VS Code Extension
+### Opção 1: Instalar com VSCE (Recomendado)
 
-Extensão para ler ePubs dentro do VS Code, usando `epub.js` dentro de um WebView, e salvando automaticamente o último local lido por arquivo.
+1. Instale o VSCE globalmente:
+```bash
+npm install -g @vscode/vsce
+```
 
-Comandos:
-- `Open EPUB` — Abre um epub
+2. Compile e empacote a extensão:
+```bash
+cd c:\SDK\epubreader
+npm run build
+vsce package
+```
 
-Como usar:
-- Instale dependências: `npm install`
-- Build: `npm run compile`
-- Inicie a extensão com `F5` em um ambiente de extensão do VSCode
+3. Instale o arquivo `.vsix` gerado:
+   - Abra VS Code
+   - Vá em Extensions (Ctrl+Shift+X)
+   - Clique nos "..." no topo
+   - Escolha "Install from VSIX..."
+   - Selecione o arquivo `vscode-epub-reader-0.1.0.vsix`
 
-Observações:
-- Usa `workspaceState` para salvar último local por URI do arquivo.
-- Webview carrega `epub.js` por CDN.
+### Opção 2: Modo Desenvolvimento
+
+1. Abra a pasta do projeto no VS Code
+2. Pressione `F5` para abrir uma nova janela com a extensão ativa
+3. Use para desenvolvimento e testes
+
+## 📖 Como Usar
+
+1. Abra o painel Explorer (ícone de arquivos)
+2. Expanda "EPUB Reader" na parte inferior
+3. Clique em "Abrir EPUB" ou use o comando `Open EPUB File`
+4. Navegue com as setas ou use ← → no teclado
+5. Selecione capítulos no dropdown
+
+## 🔧 Desenvolvimento
+
+```bash
+npm install
+npm run build
+npm run watch  # Para desenvolvimento contínuo
+```
+
+## 📝 Notas Técnicas
+
+- Usa WebView com epub.js (CDN)
+- Posição salva em `globalState`
+- Tema personalizado aplicado via CSS
+- Suporte a navegação por teclado
