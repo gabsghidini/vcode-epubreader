@@ -78,35 +78,43 @@ function activate(context) {
         try {
             const book = {
                 path: selectedUri.toString(),
-                name: selectedUri.path.split("/").pop() ||
-                    selectedUri.path,
+                name: selectedUri.path.split("/").pop() || selectedUri.path,
                 base64,
             };
-            provider.showBook(book);
-            // Try to open the Activity Bar view first (if the view provider resolves quickly)
-            let shown = false;
+            // Attempt to show container first BEFORE sending book (so pendingBook flows if needed)
+            const containerCmd = "workbench.view.extension.epubReader";
+            const openViewCmd = "workbench.views.openView";
+            console.log("openFile: executing container command early", containerCmd);
             try {
-                // Execute the container command if available and then poll for readiness
-                const containerCmd = "workbench.view.extension.epubReader.container";
-                const commands = await vscode.commands.getCommands(true);
-                if (commands.includes(containerCmd)) {
-                    await vscode.commands.executeCommand(containerCmd);
-                    // poll for provider readiness for up to 1s
-                    for (let i = 0; i < 10; i++) {
-                        if (provider.isReady && provider.isReady()) {
-                            await provider.reveal();
-                            shown = true;
-                            break;
-                        }
-                        await new Promise((r) => setTimeout(r, 100));
-                    }
-                }
+                await vscode.commands.executeCommand(containerCmd);
             }
             catch (err) {
-                console.warn("Error trying to show sidebar view", err);
+                console.warn("openFile: container command execution failed", err);
             }
-            if (!shown) {
-                // view not ready; open a fallback WebviewPanel so user can see the EPUB
+            // Try direct openView first (may show QuickPick if view not found)
+            try {
+                console.log("openFile: attempting direct openView for epubReader.sidebar");
+                await vscode.commands.executeCommand(openViewCmd, "epubReader.sidebar");
+            }
+            catch (err) {
+                console.warn("openFile: openView command failed (may be normal)", err);
+            }
+            // Poll up to 5s for provider readiness
+            let ready = false;
+            for (let i = 0; i < 50; i++) {
+                if (provider.isReady && provider.isReady()) {
+                    ready = true;
+                    break;
+                }
+                await new Promise((r) => setTimeout(r, 100));
+            }
+            if (ready) {
+                console.log("openFile: provider ready, revealing + loading book");
+                await provider.reveal();
+                provider.showBook(book);
+            }
+            else {
+                console.log("openFile: provider NOT ready after wait (5s), using fallback panel");
                 const panel = vscode.window.createWebviewPanel("epubReaderFallback", `EPUB: ${book.name}`, vscode.ViewColumn.One, {
                     enableScripts: true,
                     localResourceRoots: [
@@ -118,33 +126,58 @@ function activate(context) {
                 const jszipUri = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
                 const epubjsUri = "https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js";
                 panel.webview.html = `<!DOCTYPE html>
-                    <html lang="pt-BR">
-                    <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <link rel="stylesheet" href="${styleUri}" />
-                    <title>Epub Reader</title>
-					<script src="${jszipUri}"></script>
-					<script>
-						if (typeof JSZip === 'undefined') {
-							console.warn('JSZip not loaded in fallback webview; epub.js may fail');
-						}
-					</script>
-					<script src="${epubjsUri}"></script>
-                    </head>
-                    <body>
-                    <div id="toolbar">
-                        <button id="open">Abrir EPUB</button>
-                        <span id="book-title">${book.name}</span>
-                    </div>
-                    <div id="viewer"></div>
-                    <script src="${scriptUri}"></script>
-                    </body>
-                    </html>`;
-                // pass the book to the panel's webview once it's ready
-                panel.webview.postMessage({
-                    command: "loadBook",
-                    book,
+						<html lang="pt-BR">
+						<head>
+						<meta charset="UTF-8" />
+						<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+						<link rel="stylesheet" href="${styleUri}" />
+						<title>Epub Reader</title>
+						<script src="${jszipUri}"></script>
+						<script>if (typeof JSZip === 'undefined') { console.warn('JSZip not loaded in fallback webview; epub.js may fail'); }</script>
+						<script src="${epubjsUri}"></script>
+						</head>
+						<body>
+						<div id="toolbar">
+							<button id="open">Abrir EPUB</button>
+							<button id="openSidebar">Abrir na Barra Lateral</button>
+							<span id="book-title">${book.name}</span>
+						</div>
+						<div id="viewer"></div>
+						<script src="${scriptUri}"></script>
+						</body>
+						</html>`;
+                panel.webview.postMessage({ command: "loadBook", book });
+                panel.webview.onDidReceiveMessage(async (m) => {
+                    if (m && m.command === "openInSidebar") {
+                        console.log("extension: fallback panel requested openInSidebar (early container exec)");
+                        try {
+                            try {
+                                await vscode.commands.executeCommand(containerCmd);
+                            }
+                            catch (err) {
+                                console.warn("fallback: container command failed", err);
+                            }
+                            // poll up to 3s
+                            for (let i = 0; i < 30; i++) {
+                                if (provider.isReady && provider.isReady()) {
+                                    await provider.reveal();
+                                    provider.showBook(book);
+                                    panel.webview.postMessage({ command: "status", status: "opened" });
+                                    panel.dispose();
+                                    return;
+                                }
+                                await new Promise((r) => setTimeout(r, 100));
+                            }
+                            panel.webview.postMessage({ command: "status", status: "failed" });
+                        }
+                        catch (err) {
+                            console.warn("fallback: error opening in sidebar", err);
+                            try {
+                                panel.webview.postMessage({ command: "status", status: "failed" });
+                            }
+                            catch { }
+                        }
+                    }
                 });
             }
         }

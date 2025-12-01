@@ -76,32 +76,41 @@ export class EpubWebviewProvider implements vscode.WebviewViewProvider {
   }
 
   public async reveal() {
-    // Prefer showing the view if we already have it
+    console.log('EpubWebviewProvider: reveal invoked');
+    // If view already created, try direct show first
+    if (this._view && typeof this._view.show === 'function') {
       try {
-        if (this._view && typeof this._view.show === 'function') {
-          this._view.show(true);
-          return;
-        }
+        this._view.show(true);
+        return;
       } catch (err) {
-        console.warn('Error showing WebviewView directly:', err);
+        console.warn('EpubWebviewProvider: direct show failed', err);
       }
-
-    // Try a few possible commands that may be available in different VS Code versions.
-      // Avoid triggering commands that open a Quick Pick (workbench.action.openView)
-      // Instead, only run the container command if it exists in the commands list.
+    }
+    // Always attempt container command (does nothing if already visible)
+    try {
+      // Try direct openView first
       try {
-        const commands = await vscode.commands.getCommands(true);
-        const containerCmd = 'workbench.view.extension.epubReader.container';
-        if (commands.includes(containerCmd)) {
-          await vscode.commands.executeCommand(containerCmd);
-          return;
-        }
+        console.log('EpubWebviewProvider: attempting workbench.views.openView epubReader.sidebar');
+        await vscode.commands.executeCommand('workbench.views.openView', 'epubReader.sidebar');
       } catch (err) {
-        console.warn('Error while attempting to reveal view with container command', err);
+        console.warn('EpubWebviewProvider: openView failed (may be benign)', err);
       }
-
-    // No reveal command worked — provide an actionable message
-    vscode.window.showInformationMessage('Epub Reader: a view não está visível. Abra-a pela paleta (View: Show View → Epub Reader).');
+      await vscode.commands.executeCommand('workbench.view.extension.epubReader');
+      // After executing, if still not ready, give a short grace period
+      if (!this._view) {
+        for (let i = 0; i < 5; i++) {
+          await new Promise(r => setTimeout(r, 100));
+          if (this._view) break;
+        }
+      }
+      if (this._view && typeof this._view.show === 'function') {
+        try { this._view.show(true); } catch {}
+        return;
+      }
+    } catch (err) {
+      console.warn('EpubWebviewProvider: container command failed', err);
+    }
+    vscode.window.showInformationMessage('EPUB Reader: não foi possível revelar a view automaticamente. Abra a Activity Bar e clique em "Epub Reader".');
   }
 
     public isReady() {

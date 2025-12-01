@@ -35,14 +35,14 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "epubReader.container",
+          "id": "epubReader",
           "title": "Epub Reader",
           "icon": "media/icon.svg"
         }
       ]
     },
     "views": {
-      "epubReader.container": [
+      "epubReader": [
         {
           "id": "epubReader.sidebar",
           "name": "Epub Reader"
