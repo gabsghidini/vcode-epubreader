@@ -1,0 +1,20 @@
+# Ignore TypeScript source files
+src/
+tsconfig.json
+
+# Ignore development files
+.vscode/
+.vscode-test/
+node_modules/
+*.vsix
+
+# Ignore git files
+.git/
+.gitignore
+
+# Keep only compiled output and essential files
+# out/ - KEEP (compiled JavaScript)
+# media/ - KEEP (webview assets)
+# package.json - KEEP (manifest)
+# README.md - KEEP (documentation)
+# LICENSE - KEEP (license file)

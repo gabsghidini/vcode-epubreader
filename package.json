@@ -9,10 +9,12 @@
   },
   "publisher": "gabsghidini",
   "categories": ["Other"],
-  "activationEvents": [
-    "onView:epubReader.explorerView",
-    "onCommand:epubReader.openFile"
-  ],
+  "keywords": ["epub", "reader", "ebook", "book", "reading"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gabsghidini/vscode-epub-reader"
+  },
+  "license": "MIT",
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run build",
