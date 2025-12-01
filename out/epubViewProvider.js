@@ -71,10 +71,20 @@ class EpubWebviewProvider {
             this._view.webview.postMessage({ command: 'loadBook', book: this._pendingBook, lastLocation: saved });
             this._pendingBook = undefined;
         }
+        else {
+            // Auto-restore last opened book
+            this.restoreLastBook();
+        }
     }
     async showBook(book) {
         console.log('EpubWebviewProvider: showBook', book.path);
         this._currentBookUri = book.path;
+        // Save as last opened book
+        await this._context.globalState.update('epubReader:lastBook', {
+            path: book.path,
+            name: book.name,
+            base64: book.base64
+        });
         if (!this._view) {
             this._pendingBook = book;
             return;
@@ -140,6 +150,19 @@ class EpubWebviewProvider {
     }
     isReady() {
         return !!this._view;
+    }
+    async restoreLastBook() {
+        const lastBook = this._context.globalState.get('epubReader:lastBook');
+        if (lastBook && this._view) {
+            console.log('EpubWebviewProvider: restoring last book', lastBook.path);
+            this._currentBookUri = lastBook.path;
+            const saved = this._context.globalState.get(this.getKeyForBook(lastBook.path));
+            this._view.webview.postMessage({
+                command: 'loadBook',
+                book: lastBook,
+                lastLocation: saved
+            });
+        }
     }
     getKeyForBook(uri) {
         return `epubReader:lastLocation:${uri}`;

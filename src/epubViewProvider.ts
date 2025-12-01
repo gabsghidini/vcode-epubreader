@@ -49,12 +49,21 @@ export class EpubWebviewProvider implements vscode.WebviewViewProvider {
       const saved = this._context.globalState.get<string>(this.getKeyForBook(this._pendingBook.path));
       this._view.webview.postMessage({ command: 'loadBook', book: this._pendingBook, lastLocation: saved });
       this._pendingBook = undefined;
+    } else {
+      // Auto-restore last opened book
+      this.restoreLastBook();
     }
   }
 
   public async showBook(book: BookMessage) {
     console.log('EpubWebviewProvider: showBook', book.path);
     this._currentBookUri = book.path;
+    // Save as last opened book
+    await this._context.globalState.update('epubReader:lastBook', {
+      path: book.path,
+      name: book.name,
+      base64: book.base64
+    });
     if (!this._view) {
       this._pendingBook = book;
       return;
@@ -116,6 +125,21 @@ export class EpubWebviewProvider implements vscode.WebviewViewProvider {
     public isReady() {
       return !!this._view;
     }
+
+  private async restoreLastBook() {
+    const lastBook = this._context.globalState.get<BookMessage>('epubReader:lastBook');
+    if (lastBook && this._view) {
+      console.log('EpubWebviewProvider: restoring last book', lastBook.path);
+      this._currentBookUri = lastBook.path;
+      const saved = this._context.globalState.get<string>(this.getKeyForBook(lastBook.path));
+      this._view.webview.postMessage({
+        command: 'loadBook',
+        book: lastBook,
+        lastLocation: saved
+      });
+    }
+  }
+
   private getKeyForBook(uri: string) {
     return `epubReader:lastLocation:${uri}`;
   }
