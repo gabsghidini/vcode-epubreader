@@ -51,6 +51,12 @@
           "id": "epubReader.sidebar",
           "name": "Epub Reader"
         }
+      ],
+      "explorer": [
+        {
+          "id": "epubReader.explorerView",
+          "name": "Epub Reader (Explorer)"
+        }
       ]
     },
     "menus": {

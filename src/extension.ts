@@ -7,9 +7,26 @@ export function activate(context: vscode.ExtensionContext) {
 	const provider = new EpubWebviewProvider(context);
 	let isOpening = false; // prevent re-entrance loop
 
+	// Diagnostic: list container-related commands at activation
+	vscode.commands.getCommands(true).then(cmds => {
+		const containerCmds = cmds.filter(c => c.startsWith('workbench.view.extension.'));
+		console.log('EPUB Reader: available container commands', containerCmds);
+		if (!containerCmds.includes('workbench.view.extension.epubReader')) {
+			console.warn('EPUB Reader: expected container command workbench.view.extension.epubReader NOT found. Right-click Activity Bar to ensure custom views are visible.');
+		}
+	});
+
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(
 			"epubReader.sidebar",
+			provider
+		)
+	);
+
+	// Register the same provider for explorer fallback view
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			"epubReader.explorerView",
 			provider
 		)
 	);

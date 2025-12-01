@@ -42,7 +42,17 @@ function activate(context) {
     console.log("EPUB Reader: activate");
     const provider = new epubViewProvider_1.EpubWebviewProvider(context);
     let isOpening = false; // prevent re-entrance loop
+    // Diagnostic: list container-related commands at activation
+    vscode.commands.getCommands(true).then(cmds => {
+        const containerCmds = cmds.filter(c => c.startsWith('workbench.view.extension.'));
+        console.log('EPUB Reader: available container commands', containerCmds);
+        if (!containerCmds.includes('workbench.view.extension.epubReader')) {
+            console.warn('EPUB Reader: expected container command workbench.view.extension.epubReader NOT found. Right-click Activity Bar to ensure custom views are visible.');
+        }
+    });
     context.subscriptions.push(vscode.window.registerWebviewViewProvider("epubReader.sidebar", provider));
+    // Register the same provider for explorer fallback view
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider("epubReader.explorerView", provider));
     context.subscriptions.push(vscode.commands.registerCommand("epubReader.openFile", async (uri) => {
         if (isOpening) {
             console.log("openFile: already opening, ignoring duplicate invocation");
