@@ -169,23 +169,48 @@ export function activate(context: vscode.ExtensionContext) {
 								console.log('extension: fallback panel requested openInSidebar');
 								try {
 									const commands = await vscode.commands.getCommands(true);
+									const toggleSidebar = 'workbench.action.toggleSidebarVisibility';
+									const focusSidebar = 'workbench.action.focusSideBar';
 									const viewCmd = 'workbench.views.openView';
 									const containerCmd = 'workbench.view.extension.epubReader.container';
 									let executed = false;
+									// First, ensure the sidebar is visible and focused
+									if (commands.includes(toggleSidebar)) {
+										try {
+											console.log('extension: ensuring sidebar is visible');
+											await vscode.commands.executeCommand(toggleSidebar);
+											await new Promise((r) => setTimeout(r, 200));
+										} catch (err) {
+											console.warn('extension: toggleSidebar failed', err);
+										}
+									}
+									if (commands.includes(focusSidebar)) {
+										try {
+											console.log('extension: focusing sidebar');
+											await vscode.commands.executeCommand(focusSidebar);
+											await new Promise((r) => setTimeout(r, 200));
+										} catch (err) {
+											console.warn('extension: focusSidebar failed', err);
+										}
+									}
+									// Try to open specific view first with workbench.views.openView
 									if (commands.includes(viewCmd)) {
 										try {
 											console.log('extension: executing workbench.views.openView', 'epubReader.sidebar');
 											await vscode.commands.executeCommand(viewCmd, 'epubReader.sidebar');
 											executed = true;
+											await new Promise((r) => setTimeout(r, 200));
 										} catch (err) {
 											console.warn('extension: workbench.views.openView failed', err);
 										}
 									}
+									// If not executed, try container command
 									if (!executed && commands.includes(containerCmd)) {
 										try {
 											console.log('extension: executing container command', containerCmd);
 											await vscode.commands.executeCommand(containerCmd);
 											executed = true;
+											await new Promise((r) => setTimeout(r, 200));
 										} catch (err) {
 											console.warn('extension: container command failed', err);
 										}
@@ -195,7 +220,7 @@ export function activate(context: vscode.ExtensionContext) {
 										vscode.window.showInformationMessage('Epub Reader: a barra lateral não está disponível neste host. Abra manualmente a Activity Bar.');
 										return;
 									}
-									// poll for provider readiness
+									// poll for provider readiness (up to ~3s)
 									for (let i = 0; i < 30; i++) {
 										if (provider.isReady && provider.isReady()) {
 											console.log('extension: provider is ready, revealing');
@@ -206,8 +231,11 @@ export function activate(context: vscode.ExtensionContext) {
 									}
 									// ensure book is shown in sidebar as well
 									provider.showBook(book);
+									// send status back to panel
+									try { panel.webview.postMessage({ command: 'status', status: 'opened' }); } catch (err) {}
 								} catch (err) {
 									console.warn('Error opening in sidebar', err);
+									try { panel.webview.postMessage({ command: 'status', status: 'failed' }); } catch (err) {}
 								}
 							}
 						});

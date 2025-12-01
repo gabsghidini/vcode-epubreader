@@ -47,6 +47,22 @@ window.addEventListener('message', event => {
         openButton.disabled = false;
       }
       break;
+    case 'status':
+      // fallback panel messages will use same status field; re-enable sidebar button on failure or show success
+      if (message.status === 'opened') {
+        if (typeof openSidebarButton !== 'undefined' && openSidebarButton) {
+          openSidebarButton.disabled = true;
+        }
+        // Optionally close the panel or give feedback
+        // show short success notice
+        console.log('webview: sidebar opened successfully');
+      } else if (message.status === 'failed') {
+        if (typeof openSidebarButton !== 'undefined' && openSidebarButton) {
+          openSidebarButton.disabled = false;
+        }
+        console.warn('webview: failed to open sidebar');
+      }
+      break;
   }
 });
 
