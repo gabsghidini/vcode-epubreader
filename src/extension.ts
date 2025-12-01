@@ -4,9 +4,7 @@ import { EpubWebviewProvider } from "./epubViewProvider";
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log("EPUB Reader: activate");
-	const providerSidebar = new EpubWebviewProvider(context);
-	const providerExplorer = new EpubWebviewProvider(context);
-	const providers = [providerSidebar, providerExplorer];
+	const provider = new EpubWebviewProvider(context);
 	let isOpening = false; // prevent re-entrance loop
 
 	// Diagnostic: list container-related commands at activation
@@ -21,13 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(
 			"epubReader.sidebar",
-			providerSidebar
-		)
-	);
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(
-			"epubReader.explorerView",
-			providerExplorer
+			provider
 		)
 	);
 
@@ -43,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				isOpening = true;
 				try {
-					providerSidebar.postStatus("opening");
+					provider.postStatus("opening");
 				} catch (err) {
 					console.warn(
 						"Could not post opening status to webview",
@@ -113,16 +105,16 @@ export function activate(context: vscode.ExtensionContext) {
 					// Poll up to 10s for provider readiness
 					let ready = false;
 					for (let i = 0; i < 100; i++) {
-						if (providerSidebar.isReady && providerSidebar.isReady()) {
+						if (provider.isReady && provider.isReady()) {
 							ready = true;
 							break;
 						}
 						await new Promise((r) => setTimeout(r, 100));
 					}
 					if (ready) {
-						console.log("openFile: provider ready, revealing + loading book in both views");
-						await providerSidebar.reveal();
-						providers.forEach(p => p.showBook(book));
+						console.log("openFile: provider ready, revealing + loading book");
+						await provider.reveal();
+						provider.showBook(book);
 					} else {
 						console.log("openFile: provider NOT ready after wait (10s), using fallback panel");
 						const panel = vscode.window.createWebviewPanel(
@@ -173,9 +165,9 @@ export function activate(context: vscode.ExtensionContext) {
 									try { await vscode.commands.executeCommand(containerCmd); } catch (err) { console.warn("fallback: container command failed", err); }
 									// poll up to 3s
 									for (let i = 0; i < 50; i++) {
-										if (providerSidebar.isReady && providerSidebar.isReady()) {
-											await providerSidebar.reveal();
-											providers.forEach(p => p.showBook(book));
+										if (provider.isReady && provider.isReady()) {
+											await provider.reveal();
+											provider.showBook(book);
 											panel.webview.postMessage({ command: "status", status: "opened" });
 											panel.dispose();
 											return;
@@ -193,7 +185,7 @@ export function activate(context: vscode.ExtensionContext) {
 				} finally {
 					isOpening = false;
 					try {
-						providerSidebar.postStatus("ready");
+						provider.postStatus("ready");
 					} catch (err) {
 						console.warn("Error posting ready status", err);
 					}
@@ -220,12 +212,12 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				const bytes = await vscode.workspace.fs.readFile(doc.uri);
 				const base64 = Buffer.from(bytes).toString("base64");
-				providers.forEach(p => p.showBook({
+				provider.showBook({
 					path: doc.uri.toString(),
 					name: doc.uri.path.split("/").pop() || doc.uri.path,
 					base64,
-				}));
-				providerSidebar.reveal();
+				});
+				provider.reveal();
 			}
 		)
 	);
@@ -234,7 +226,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand("epubReader.focusView", async () => {
 			console.log("epubReader.focusView invoked");
-			try { await providerSidebar.reveal(); } catch (err) { console.warn("focusView: reveal failed", err); }
+			try { await provider.reveal(); } catch (err) { console.warn("focusView: reveal failed", err); }
 		})
 	);
 }
