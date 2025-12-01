@@ -5,7 +5,6 @@ let rendition, book, currentBookUri;
 
 const openButton = document.getElementById('open');
 openButton.addEventListener('click', () => {
-  console.log('webview: open click -> posting openFile');
   openButton.disabled = true;
   vscode.postMessage({ command: 'openFile' });
 });
@@ -64,7 +63,6 @@ document.addEventListener('keydown', (e) => {
 const openSidebarButton = document.getElementById('openSidebar');
 if (openSidebarButton) {
   openSidebarButton.addEventListener('click', () => {
-    console.log('webview: openSidebar click -> posting openInSidebar');
     openSidebarButton.disabled = true;
     vscode.postMessage({ command: 'openInSidebar' });
   });
@@ -72,10 +70,6 @@ if (openSidebarButton) {
 
 window.addEventListener('message', event => {
   const message = event.data;
-  // Only log explicit extension messages to avoid noise from internal libraries
-  if (message && (message.command === 'loadBook' || message.command === 'status')) {
-    console.log('webview: message received', message);
-  }
   switch (message.command) {
     case 'loadBook':
       loadBook(message.book, message.lastLocation);
@@ -93,14 +87,10 @@ window.addEventListener('message', event => {
         if (typeof openSidebarButton !== 'undefined' && openSidebarButton) {
           openSidebarButton.disabled = true;
         }
-        // Optionally close the panel or give feedback
-        // show short success notice
-        console.log('webview: sidebar opened successfully');
       } else if (message.status === 'failed') {
         if (typeof openSidebarButton !== 'undefined' && openSidebarButton) {
           openSidebarButton.disabled = false;
         }
-        console.warn('webview: failed to open sidebar');
       }
       break;
   }
@@ -182,7 +172,7 @@ async function loadBook(bookMsg, lastLocation) {
     });
 
     if (lastLocation) {
-      try { await rendition.display(lastLocation); } catch (err) { console.warn(err); }
+      try { await rendition.display(lastLocation); } catch {}
     }
 
     // Update progress and chapter info
@@ -214,7 +204,7 @@ async function loadBook(bookMsg, lastLocation) {
     // Generate locations for progress tracking
     book.ready.then(() => {
       return book.locations.generate(1024);
-    }).catch(err => console.warn('Could not generate locations:', err));
+    }).catch(() => {});
 
   } catch (err) {
     titleEl.textContent = '❌ Erro ao carregar';
@@ -227,11 +217,9 @@ async function loadBook(bookMsg, lastLocation) {
   });
 
   book.on('book:error', (err) => {
-    console.error('book:error', err);
     displayError(err);
   });
   book.on('error', (err) => {
-    console.error('book:error', err);
     displayError(err);
   });
 

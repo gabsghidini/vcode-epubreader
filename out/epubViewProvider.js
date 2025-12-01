@@ -41,7 +41,6 @@ class EpubWebviewProvider {
         this._context = context;
     }
     resolveWebviewView(webviewView) {
-        console.log('EpubWebviewProvider: resolveWebviewView');
         this._view = webviewView;
         webviewView.webview.options = {
             enableScripts: true,
@@ -51,7 +50,6 @@ class EpubWebviewProvider {
         };
         webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
         webviewView.webview.onDidReceiveMessage(async (message) => {
-            console.log('EpubWebviewProvider: received message', message);
             switch (message.command) {
                 case 'openFile':
                     vscode.commands.executeCommand('epubReader.openFile');
@@ -77,7 +75,6 @@ class EpubWebviewProvider {
         }
     }
     async showBook(book) {
-        console.log('EpubWebviewProvider: showBook', book.path);
         this._currentBookUri = book.path;
         // Save as last opened book
         await this._context.globalState.update('epubReader:lastBook', {
@@ -105,26 +102,22 @@ class EpubWebviewProvider {
         this._view.webview.postMessage({ command: 'status', status });
     }
     async reveal() {
-        console.log('EpubWebviewProvider: reveal invoked');
         // If view already created, try direct show first
         if (this._view && typeof this._view.show === 'function') {
             try {
                 this._view.show(true);
                 return;
             }
-            catch (err) {
-                console.warn('EpubWebviewProvider: direct show failed', err);
+            catch {
             }
         }
         // Always attempt container command (does nothing if already visible)
         try {
             // Try direct openView first
             try {
-                console.log('EpubWebviewProvider: attempting workbench.views.openView epubReader.sidebar');
                 await vscode.commands.executeCommand('workbench.views.openView', 'epubReader.sidebar');
             }
-            catch (err) {
-                console.warn('EpubWebviewProvider: openView failed (may be benign)', err);
+            catch {
             }
             await vscode.commands.executeCommand('workbench.view.extension.epubReader');
             // After executing, if still not ready, give a short grace period
@@ -143,8 +136,7 @@ class EpubWebviewProvider {
                 return;
             }
         }
-        catch (err) {
-            console.warn('EpubWebviewProvider: container command failed', err);
+        catch {
         }
         vscode.window.showInformationMessage('EPUB Reader: não foi possível revelar a view automaticamente. Abra a Activity Bar e clique em "Epub Reader".');
     }
@@ -180,12 +172,6 @@ class EpubWebviewProvider {
   <link rel="stylesheet" href="${styleUri}" />
   <title>Epub Reader</title>
   <script src="${jszipUri}"></script>
-  <script>
-    // Ensure JSZip is available for epub.js
-    if (typeof JSZip === 'undefined') {
-      console.warn('JSZip not loaded; epub.js may fail to parse epubs');
-    }
-  </script>
   <script src="${epubjsUri}"></script>
 </head>
 <body>
