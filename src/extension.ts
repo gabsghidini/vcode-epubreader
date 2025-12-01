@@ -171,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
 									const commands = await vscode.commands.getCommands(true);
 									if (commands.includes(containerCmd)) {
 										await vscode.commands.executeCommand(containerCmd);
-										for (let i = 0; i < 20; i++) {
+													for (let i = 0; i < 30; i++) {
 											if (provider.isReady && provider.isReady()) {
 												await provider.reveal();
 												break;

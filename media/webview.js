@@ -31,7 +31,10 @@ if (openSidebarButton) {
 
 window.addEventListener('message', event => {
   const message = event.data;
-  console.log('webview: message received', message);
+  // Only log explicit extension messages to avoid noise from internal libraries
+  if (message && (message.command === 'loadBook' || message.command === 'status')) {
+    console.log('webview: message received', message);
+  }
   switch (message.command) {
     case 'loadBook':
       loadBook(message.book, message.lastLocation);
