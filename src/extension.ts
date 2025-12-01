@@ -149,10 +149,11 @@ export function activate(context: vscode.ExtensionContext) {
                                 <script src="${epubjsUri}"></script>
                             </head>
                             <body>
-                                <div id="toolbar">
-                                    <button id="open">Abrir EPUB</button>
-                                    <span id="book-title">${book.name}</span>
-                                </div>
+								<div id="toolbar">
+									<button id="open">Abrir EPUB</button>
+									<button id="openSidebar">Abrir na Barra Lateral</button>
+									<span id="book-title">${book.name}</span>
+								</div>
                                 <div id="viewer"></div>
                                 <script src="${scriptUri}"></script>
                             </body>
@@ -161,6 +162,30 @@ export function activate(context: vscode.ExtensionContext) {
 						panel.webview.postMessage({
 							command: "loadBook",
 							book,
+						});
+						// handle incoming messages from the panel
+						panel.webview.onDidReceiveMessage(async (m) => {
+							if (m && m.command === 'openInSidebar') {
+								try {
+									const containerCmd = 'workbench.view.extension.epubReader.container';
+									const commands = await vscode.commands.getCommands(true);
+									if (commands.includes(containerCmd)) {
+										await vscode.commands.executeCommand(containerCmd);
+										for (let i = 0; i < 20; i++) {
+											if (provider.isReady && provider.isReady()) {
+												await provider.reveal();
+												break;
+											}
+											await new Promise((r) => setTimeout(r, 100));
+										}
+										provider.showBook(book);
+									} else {
+										vscode.window.showInformationMessage('Epub Reader: a barra lateral não está disponível neste host. Abra manualmente a Activity Bar.');
+									}
+								} catch (err) {
+									console.warn('Error opening in sidebar', err);
+								}
+							}
 						});
 					}
 				} finally {

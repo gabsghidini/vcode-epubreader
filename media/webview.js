@@ -21,6 +21,14 @@ document.getElementById('toolbar').insertBefore(btnPrev, document.getElementById
 btnPrev.addEventListener('click', () => rendition && rendition.prev());
 btnNext.addEventListener('click', () => rendition && rendition.next());
 
+const openSidebarButton = document.getElementById('openSidebar');
+if (openSidebarButton) {
+  openSidebarButton.addEventListener('click', () => {
+    console.log('webview: openSidebar click -> posting openInSidebar');
+    vscode.postMessage({ command: 'openInSidebar' });
+  });
+}
+
 window.addEventListener('message', event => {
   const message = event.data;
   console.log('webview: message received', message);
