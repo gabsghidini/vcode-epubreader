@@ -49,13 +49,15 @@
       "epubReader": [
         {
           "id": "epubReader.sidebar",
-          "name": "Epub Reader"
+          "name": "Epub Reader",
+          "type": "webview"
         }
       ],
       "explorer": [
         {
           "id": "epubReader.explorerView",
-          "name": "Epub Reader (Explorer)"
+          "name": "Epub Reader (Explorer)",
+          "type": "webview"
         }
       ]
     },
