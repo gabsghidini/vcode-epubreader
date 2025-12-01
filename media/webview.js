@@ -27,16 +27,23 @@ const progressFill = document.createElement('div');
 progressFill.id = 'progress-fill';
 progressBar.appendChild(progressFill);
 
+// Chapter selector
+const chapterSelect = document.createElement('select');
+chapterSelect.id = 'chapter-select';
+chapterSelect.title = 'Selecionar Capítulo';
+chapterSelect.style.maxWidth = '200px';
+
 // Chapter info
 const chapterInfo = document.createElement('span');
 chapterInfo.id = 'chapter-info';
 chapterInfo.style.fontSize = '11px';
 chapterInfo.style.opacity = '0.7';
+chapterInfo.style.display = 'none'; // Hide text info, use dropdown instead
 
 const toolbar = document.getElementById('toolbar');
 toolbar.insertBefore(btnPrev, document.getElementById('book-title'));
 toolbar.insertBefore(btnNext, document.getElementById('book-title'));
-toolbar.appendChild(chapterInfo);
+toolbar.appendChild(chapterSelect);
 toolbar.appendChild(progressBar);
 
 btnPrev.addEventListener('click', () => rendition && rendition.prev());
@@ -125,8 +132,43 @@ async function loadBook(bookMsg, lastLocation) {
     viewer.appendChild(container);
     rendition = book.renderTo(container, { width: '100%', height: '100%' });
     
+    // Apply white text styling
+    rendition.themes.default({
+      'body': {
+        'color': '#ffffff !important',
+        'background': '#1e1e1e !important'
+      },
+      'p': { 'color': '#ffffff !important' },
+      'h1, h2, h3, h4, h5, h6': { 'color': '#ffffff !important' },
+      'span': { 'color': '#ffffff !important' },
+      'div': { 'color': '#ffffff !important' },
+      'a': { 'color': '#4fc3f7 !important' }
+    });
+    
     await rendition.display();
     titleEl.textContent = bookMsg.name;
+
+    // Populate chapter selector
+    await book.ready;
+    const navigation = book.navigation;
+    const chapterSelect = document.getElementById('chapter-select');
+    chapterSelect.innerHTML = '<option value="">Selecione um capítulo...</option>';
+    
+    if (navigation && navigation.toc) {
+      navigation.toc.forEach((chapter, index) => {
+        const option = document.createElement('option');
+        option.value = chapter.href;
+        option.textContent = chapter.label.trim();
+        chapterSelect.appendChild(option);
+      });
+    }
+
+    chapterSelect.addEventListener('change', (e) => {
+      const href = e.target.value;
+      if (href && rendition) {
+        rendition.display(href);
+      }
+    });
 
     if (lastLocation) {
       try { await rendition.display(lastLocation); } catch (err) { console.warn(err); }
@@ -144,15 +186,17 @@ async function loadBook(bookMsg, lastLocation) {
         progressFill.style.width = (progress * 100) + '%';
       }
       
-      // Update chapter info
+      // Update chapter selector
       const section = book.spine.get(cfi);
       if (section) {
-        section.load(book.load.bind(book)).then(() => {
-          const navItem = book.navigation.get(section.href);
-          if (navItem && navItem.label) {
-            document.getElementById('chapter-info').textContent = navItem.label.trim();
+        const chapterSelect = document.getElementById('chapter-select');
+        const options = chapterSelect.options;
+        for (let i = 0; i < options.length; i++) {
+          if (section.href && options[i].value && section.href.includes(options[i].value)) {
+            chapterSelect.selectedIndex = i;
+            break;
           }
-        });
+        }
       }
     });
 
