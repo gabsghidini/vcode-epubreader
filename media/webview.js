@@ -19,34 +19,32 @@ btnNext.textContent = '▶';
 btnNext.id = 'next';
 btnNext.title = 'Próxima Página (→)';
 
-// Progress indicator
-const progressBar = document.createElement('div');
-progressBar.id = 'progress-bar';
-const progressFill = document.createElement('div');
-progressFill.id = 'progress-fill';
-progressBar.appendChild(progressFill);
-
 // Chapter selector
 const chapterSelect = document.createElement('select');
 chapterSelect.id = 'chapter-select';
 chapterSelect.title = 'Selecionar Capítulo';
 chapterSelect.style.maxWidth = '200px';
 
-// Chapter info
-const chapterInfo = document.createElement('span');
-chapterInfo.id = 'chapter-info';
-chapterInfo.style.fontSize = '11px';
-chapterInfo.style.opacity = '0.7';
-chapterInfo.style.display = 'none'; // Hide text info, use dropdown instead
+// Go button for chapter navigation
+const btnGo = document.createElement('button');
+btnGo.textContent = 'Ir';
+btnGo.id = 'go';
+btnGo.title = 'Ir para o capítulo selecionado';
 
 const toolbar = document.getElementById('toolbar');
 toolbar.insertBefore(btnPrev, document.getElementById('book-title'));
 toolbar.insertBefore(btnNext, document.getElementById('book-title'));
 toolbar.appendChild(chapterSelect);
-toolbar.appendChild(progressBar);
+toolbar.appendChild(btnGo);
 
 btnPrev.addEventListener('click', () => rendition && rendition.prev());
 btnNext.addEventListener('click', () => rendition && rendition.next());
+btnGo.addEventListener('click', () => {
+  const href = chapterSelect.value;
+  if (href && rendition) {
+    rendition.display(href);
+  }
+});
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
@@ -164,6 +162,7 @@ async function loadBook(bookMsg, lastLocation) {
       addChaptersRecursive(navigation.toc);
     }
 
+    // Add chapter selector navigation immediately after populating
     chapterSelect.addEventListener('change', (e) => {
       const href = e.target.value;
       if (href && rendition) {
@@ -175,46 +174,35 @@ async function loadBook(bookMsg, lastLocation) {
       try { await rendition.display(lastLocation); } catch {}
     }
 
-    // Update progress and chapter info
-    rendition.on('relocated', (loc) => {
-      const cfi = loc.start.cfi;
-      vscode.postMessage({ command: 'saveLocation', location: cfi, path: currentBookUri });
-      
-      // Update progress bar
-      const progress = book.locations.percentageFromCfi(cfi);
-      if (progress !== undefined) {
-        const progressFill = document.getElementById('progress-fill');
-        progressFill.style.width = (progress * 100) + '%';
-      }
-      
-      // Update chapter selector
-      const section = book.spine.get(cfi);
-      if (section) {
-        const chapterSelect = document.getElementById('chapter-select');
-        const options = chapterSelect.options;
-        for (let i = 0; i < options.length; i++) {
-          if (section.href && options[i].value && section.href.includes(options[i].value)) {
-            chapterSelect.selectedIndex = i;
-            break;
-          }
-        }
-      }
-    });
-
-    // Generate locations for progress tracking
+    // Generate locations for progress tracking first
     book.ready.then(() => {
       return book.locations.generate(1024);
+    }).then(() => {
+      // Setup progress and navigation handlers after locations are ready
+      rendition.on('relocated', (loc) => {
+        const cfi = loc.start.cfi;
+        vscode.postMessage({ command: 'saveLocation', location: cfi, path: currentBookUri });
+        
+        // Update chapter selector to reflect current chapter
+        const section = book.spine.get(cfi);
+        if (section) {
+          const chapterSelect = document.getElementById('chapter-select');
+          const options = chapterSelect.options;
+          for (let i = 0; i < options.length; i++) {
+            if (section.href && options[i].value && section.href.includes(options[i].value)) {
+              chapterSelect.selectedIndex = i;
+              break;
+            }
+          }
+        }
+      });
+      
     }).catch(() => {});
 
   } catch (err) {
     titleEl.textContent = '❌ Erro ao carregar';
     displayError('Erro ao carregar EPUB: ' + err.message);
   }
-
-  rendition.on('relocated', (loc) => {
-    const cfi = loc.start.cfi;
-    vscode.postMessage({ command: 'saveLocation', location: cfi, path: currentBookUri });
-  });
 
   book.on('book:error', (err) => {
     displayError(err);
